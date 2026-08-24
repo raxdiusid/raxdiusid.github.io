@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -202,25 +202,8 @@ section{ position:relative; z-index:1; padding:96px 0 40px; }
   position:relative;
   aspect-ratio:16/9;
   background:#000;
-  cursor:pointer;
   overflow:hidden;
 }
-.card-video img{ width:100%; height:100%; object-fit:cover; opacity:.75; transition:opacity .15s ease; }
-.card-video:hover img{ opacity:.55; }
-.play-btn{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-}
-.play-btn span{
-  width:52px; height:52px;
-  border-radius:50%;
-  background:rgba(10,13,18,0.7);
-  border:1px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  transition: background .15s ease, transform .15s ease;
-}
-.card-video:hover .play-btn span{ background:rgba(94,234,212,0.15); border-color:var(--accent); transform:scale(1.06); }
-.play-btn svg{ width:16px; height:16px; fill:var(--accent); margin-left:3px; }
 .card-video iframe{ width:100%; height:100%; border:0; }
 
 .card-body{ padding:18px 18px 20px; display:flex; flex-direction:column; gap:8px; flex:1; }
@@ -337,7 +320,7 @@ footer{
 
 <nav class="nav">
   <div class="nav-inner">
-    <div class="brand"><span class="brand-dot"></span>raxdiusid</div>
+    <div class="brand"><span class="brand-dot"></span>raxdiusid.dev</div>
     <div class="tabs">
       <a href="#profile" class="tab active" data-tab><span class="tab-dot"></span>profile<span class="ext">.tsx</span></a>
       <a href="#past-works" class="tab" data-tab><span class="tab-dot"></span>past-works<span class="ext">.tsx</span></a>
@@ -396,7 +379,7 @@ footer{
           <p class="term-line"><span class="prompt">$</span> contact me on discord</p>
           <div class="discord-box">
             <span class="lbl">discord://</span>
-            <span class="val" id="discord-handle">raxdiusid</span>
+            <span class="val" id="discord-handle">Jane</span>
             <button class="copy-btn" id="copy-btn" type="button">copy</button>
           </div>
           <div class="status-line"><span class="status-dot"></span>Replies within a few hours · Paid commissions only</div>
@@ -464,13 +447,19 @@ const WORKS = [
 
 // ---- render past works grid ----
 const grid = document.getElementById("works-grid");
+const origin = encodeURIComponent(window.location.origin);
 WORKS.forEach((w) => {
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
-    <div class="card-video" data-id="${w.youtubeId}">
-      <img src="https://img.youtube.com/vi/${w.youtubeId}/hqdefault.jpg" alt="${w.title} thumbnail" loading="lazy">
-      <div class="play-btn"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+    <div class="card-video">
+      <iframe
+        src="https://www.youtube.com/embed/${w.youtubeId}?origin=${origin}"
+        title="${w.title}"
+        loading="lazy"
+        allow="accelerated-video; encrypted-media; picture-in-picture"
+        allowfullscreen>
+      </iframe>
     </div>
     <div class="card-body">
       <span class="card-tag">${w.category}</span>
@@ -479,14 +468,6 @@ WORKS.forEach((w) => {
     </div>
   `;
   grid.appendChild(card);
-});
-
-// load the YouTube embed only when a thumbnail is clicked (keeps the page light)
-grid.addEventListener("click", (e) => {
-  const box = e.target.closest(".card-video");
-  if (!box || box.querySelector("iframe")) return;
-  const id = box.dataset.id;
-  box.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" title="video" allow="accelerated-video; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
 });
 
 // ---- discord handle + copy button ----
