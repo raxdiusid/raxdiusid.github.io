@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>raxdiusid — Luau Scripter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   CUSTOMIZE ME
+   Every color, spacing unit and font on this site is driven by
+   the variables below. Change a value here and it updates
+   everywhere it's used.
+   ============================================================ */
+:root{
+  /* ---- palette (editor-inspired) ---- */
+  --bg:          #0a0d12;   /* page background */
+  --bg-raised:   #10141b;   /* nav / cards base */
+  --bg-card:     #131822;   /* card surface */
+  --bg-input:    #0d1117;   /* input / terminal surface */
+  --border:      #1e2530;
+  --border-soft: #171d27;
+
+  --text:        #cbd3e0;   /* primary text */
+  --text-dim:    #6b7688;   /* secondary / comment text */
+  --text-faint:  #464f5e;   /* gutter numbers, faint marks */
+
+  --accent:      #5eead4;   /* mint — primary accent / "return type" */
+  --accent-2:    #f2b866;   /* amber — "string" accent */
+  --accent-3:    #c792ea;   /* violet — "keyword" accent */
+  --accent-pink: #ff7aa8;   /* used sparingly: hire-me highlight */
+
+  --radius:      10px;
+  --radius-sm:   6px;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --maxw: 1100px;
+  --nav-h: 56px;
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; scroll-padding-top: calc(var(--nav-h) + 24px); }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+img{ max-width:100%; display:block; }
+a{ color:inherit; }
+::selection{ background:var(--accent); color:#0a0d12; }
+
+/* faint code-editor grid texture on the page background */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--border-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity:.35;
+  pointer-events:none;
+  z-index:0;
+  mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black, transparent 70%);
+}
+
+.wrap{ max-width:var(--maxw); margin:0 auto; padding:0 24px; position:relative; z-index:1; }
+
+/* ============================================================
+   NAV — styled like an editor's open-file tab bar
+   ============================================================ */
+.nav{
+  position:sticky; top:0; z-index:50;
+  height:var(--nav-h);
+  background:rgba(10,13,18,0.85);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:var(--maxw); margin:0 auto; padding:0 24px;
+  height:100%;
+  display:flex; align-items:center; gap:28px;
+}
+.brand{
+  display:flex; align-items:center; gap:8px;
+  font-weight:700; font-size:14px; color:var(--text);
+  white-space:nowrap;
+  margin-right:4px;
+}
+.brand-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+  flex-shrink:0;
+}
+.tabs{ display:flex; align-items:stretch; height:100%; gap:2px; overflow-x:auto; }
+.tab{
+  display:flex; align-items:center; gap:8px;
+  padding:0 14px;
+  height:100%;
+  font-size:13px;
+  color:var(--text-dim);
+  text-decoration:none;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.tab:hover{ color:var(--text); background:rgba(255,255,255,0.03); }
+.tab.active{ color:var(--accent); border-bottom-color:var(--accent); background:rgba(94,234,212,0.06); }
+.tab .ext{ color:var(--text-faint); }
+.tab.active .ext{ color:var(--accent); opacity:.6; }
+.tab-dot{ width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.5; }
+
+/* ============================================================
+   SHARED SECTION CHROME
+   ============================================================ */
+section{ position:relative; z-index:1; padding:96px 0 40px; }
+.eyebrow{
+  color:var(--text-dim);
+  font-size:13px;
+  margin:0 0 14px;
+  display:flex; align-items:center; gap:8px;
+}
+.eyebrow::before{ content:"//"; color:var(--text-faint); }
+.section-label{
+  font-size:12px; letter-spacing:.04em; color:var(--text-faint);
+  margin-bottom:28px;
+  display:flex; align-items:center; gap:10px;
+}
+.section-label .path{ color:var(--accent-3); }
+.section-label .line{ flex:1; height:1px; background:var(--border); }
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+.hero{ padding-top:120px; min-height:calc(100vh - var(--nav-h)); display:flex; align-items:center; }
+.hero-inner{ max-width:760px; }
+.headline{
+  font-size:clamp(26px, 4vw, 40px);
+  font-weight:800;
+  line-height:1.35;
+  margin:0 0 22px;
+  letter-spacing:-0.01em;
+}
+.headline .who{ color:var(--text); }
+.headline .name{ color:var(--accent); }
+.headline .sep{ color:var(--text-faint); padding:0 10px; font-weight:400; }
+.headline .role{ color:var(--accent-2); }
+.headline .role .num{ color:var(--accent-3); }
+
+.bio{
+  color:var(--text-dim);
+  font-size:15px;
+  max-width:640px;
+  margin:0 0 30px;
+}
+.bio .hl{ color:var(--text); }
+
+.hero-tags{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+.hero-tags span{
+  font-size:12px;
+  color:var(--accent-3);
+  border:1px solid var(--border);
+  background:var(--bg-raised);
+  padding:5px 10px;
+  border-radius:var(--radius-sm);
+}
+.hero-tags span::before{ content:"<"; color:var(--text-faint); }
+.hero-tags span::after{ content:"/>"; color:var(--text-faint); }
+
+.cursor{
+  display:inline-block; width:9px; height:1.1em; background:var(--accent);
+  margin-left:4px; vertical-align:-2px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* ============================================================
+   PAST WORKS
+   ============================================================ */
+.works-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+  gap:22px;
+}
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  display:flex; flex-direction:column;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.card:hover{ border-color:#2a3242; transform:translateY(-2px); }
+
+.card-video{
+  position:relative;
+  aspect-ratio:16/9;
+  background:#000;
+  cursor:pointer;
+  overflow:hidden;
+}
+.card-video img{ width:100%; height:100%; object-fit:cover; opacity:.75; transition:opacity .15s ease; }
+.card-video:hover img{ opacity:.55; }
+.play-btn{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.play-btn span{
+  width:52px; height:52px;
+  border-radius:50%;
+  background:rgba(10,13,18,0.7);
+  border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  transition: background .15s ease, transform .15s ease;
+}
+.card-video:hover .play-btn span{ background:rgba(94,234,212,0.15); border-color:var(--accent); transform:scale(1.06); }
+.play-btn svg{ width:16px; height:16px; fill:var(--accent); margin-left:3px; }
+.card-video iframe{ width:100%; height:100%; border:0; }
+
+.card-body{ padding:18px 18px 20px; display:flex; flex-direction:column; gap:8px; flex:1; }
+.card-tag{
+  align-self:flex-start;
+  font-size:11px;
+  color:var(--bg);
+  background:var(--accent);
+  padding:3px 8px;
+  border-radius:4px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+.card-title{ font-size:15px; font-weight:700; color:var(--text); margin:2px 0 0; }
+.card-desc{ font-size:13px; color:var(--text-dim); margin:0; }
+
+/* ============================================================
+   HIRE ME
+   ============================================================ */
+.hire-grid{
+  display:grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap:26px;
+  align-items:stretch;
+}
+@media (max-width:760px){ .hire-grid{ grid-template-columns:1fr; } }
+
+.term{
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.term-bar{
+  display:flex; align-items:center; gap:7px;
+  padding:10px 14px;
+  background:var(--bg-raised);
+  border-bottom:1px solid var(--border);
+}
+.term-bar i{ width:10px; height:10px; border-radius:50%; display:block; }
+.term-bar i:nth-child(1){ background:#ff5f57; }
+.term-bar i:nth-child(2){ background:#febc2e; }
+.term-bar i:nth-child(3){ background:#28c840; }
+.term-bar span{ margin-left:10px; font-size:12px; color:var(--text-faint); }
+
+.term-body{ padding:26px; }
+.term-line{ color:var(--text-dim); font-size:13px; margin:0 0 16px; }
+.term-line .prompt{ color:var(--accent); }
+.discord-box{
+  display:flex; align-items:center; gap:12px;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:14px 16px;
+}
+.discord-box .lbl{ font-size:11px; color:var(--text-faint); }
+.discord-box .val{ font-size:17px; font-weight:700; color:var(--accent-2); flex:1; }
+.copy-btn{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text-dim);
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:7px 10px;
+  cursor:pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.copy-btn:hover{ color:var(--accent); border-color:var(--accent); background:rgba(94,234,212,0.06); }
+
+.status-line{
+  margin-top:18px;
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--text-dim);
+}
+.status-dot{
+  width:7px; height:7px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 6px var(--accent);
+  flex-shrink:0;
+}
+
+.side{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:24px 26px;
+}
+.side h3{ font-size:12px; color:var(--text-faint); margin:0 0 14px; font-weight:600; }
+.side ul{ list-style:none; margin:0 0 20px; padding:0; display:flex; flex-direction:column; gap:10px; }
+.side li{ font-size:14px; color:var(--text); display:flex; align-items:flex-start; gap:10px; }
+.side li::before{ content:"-"; color:var(--accent-3); }
+.side .footnote{ font-size:12px; color:var(--text-dim); border-top:1px solid var(--border); padding-top:16px; }
+.side .footnote b{ color:var(--accent-pink); font-weight:700; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer{
+  border-top:1px solid var(--border);
+  padding:28px 0 40px;
+  text-align:center;
+  color:var(--text-faint);
+  font-size:12px;
+  position:relative; z-index:1;
+}
+
+@media (max-width:600px){
+  section{ padding:64px 0 24px; }
+  .hero{ padding-top:88px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand"><span class="brand-dot"></span>raxdiusid</div>
+    <div class="tabs">
+      <a href="#profile" class="tab active" data-tab><span class="tab-dot"></span>profile<span class="ext">.tsx</span></a>
+      <a href="#past-works" class="tab" data-tab><span class="tab-dot"></span>past-works<span class="ext">.tsx</span></a>
+      <a href="#hire-me" class="tab" data-tab><span class="tab-dot"></span>hire-me<span class="ext">.tsx</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     PROFILE
+     ============================================================ -->
+<section id="profile" class="hero">
+  <div class="wrap hero-inner">
+    <p class="eyebrow">clean / scale / maintain</p>
+    <h1 class="headline">
+      <span class="who">Hello, I'm</span> <span class="name">raxdiusid</span><span class="sep">|</span><span class="role">Luau scripter</span> <span class="who">with</span> <span class="role"><span class="num">&gt;1</span> year</span> <span class="who">of experience.</span>
+    </h1>
+    <p class="bio">
+      I am a <span class="hl">Roblox scripter</span> with a year of hands-on experience focusing on
+      modular, clean, and organized code. I've created a wide range of creations, from simple
+      mechanisms to complex systems. Looking for someone experienced at handling
+      <span class="hl">datastore</span>, <span class="hl">UI</span>, <span class="hl">weapon systems</span>,
+      <span class="hl">combat systems</span>, <span class="hl">physics</span>, and
+      <span class="hl">incremental games</span>? You've met the right person<span class="cursor"></span>
+    </p>
+    <div class="hero-tags">
+      <span>Datastore</span><span>UI</span><span>Weapon Systems</span><span>Combat</span><span>Physics</span><span>Incremental</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PAST WORKS
+     ============================================================ -->
+<section id="past-works">
+  <div class="wrap">
+    <div class="section-label"><span class="path">~/past-works</span><span class="line"></span></div>
+    <p class="eyebrow" style="margin-bottom:28px;">a few things I've shipped</p>
+    <div id="works-grid" class="works-grid"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     HIRE ME
+     ============================================================ -->
+<section id="hire-me">
+  <div class="wrap">
+    <div class="section-label"><span class="path">~/hire-me</span><span class="line"></span></div>
+    <div class="hire-grid">
+      <div class="term">
+        <div class="term-bar">
+          <i></i><i></i><i></i>
+          <span>contact.sh</span>
+        </div>
+        <div class="term-body">
+          <p class="term-line"><span class="prompt">$</span> contact me on discord</p>
+          <div class="discord-box">
+            <span class="lbl">discord://</span>
+            <span class="val" id="discord-handle">raxdiusid</span>
+            <button class="copy-btn" id="copy-btn" type="button">copy</button>
+          </div>
+          <div class="status-line"><span class="status-dot"></span>Replies within a few hours · Paid commissions only</div>
+        </div>
+      </div>
+
+      <div class="side">
+        <h3>// helpful to include</h3>
+        <ul>
+          <li>What it does</li>
+          <li>Rough scope</li>
+          <li>Budget</li>
+          <li>Timeline</li>
+        </ul>
+        <p class="footnote"><b>Note:</b> replies within a few hours. Paid commissions only.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>// © raxdiusid 2026</footer>
+
+<script>
+/* ============================================================
+   CUSTOMIZE ME — everything below is content, not styling.
+   ============================================================ */
+
+// Discord handle shown in the Hire Me box (also used by the copy button)
+const DISCORD_HANDLE = "raxdiusid";
+
+// Past work entries. `youtubeId` is the part of the YouTube URL after
+// "v=" e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ -> "dQw4w9WgXcQ"
+const WORKS = [
+  {
+    youtubeId: "cVNcxsRTaKFdkfy4",
+    title: "Modular Combat System",
+    category: "Combat",
+    description: "State-machine driven combat framework with hitboxes, combos and server-authoritative validation."
+  },
+  {
+    youtubeId: "HLPUzqGqNiCQLBeP",
+    title: "FPS Weapon",
+    category: "FPS",
+    description: "An advanced system of viewmodel that utilizes projectile physics and server-authoritative validation."
+  },
+  {
+    youtubeId: "-iG3mktuSwbbNPxM",
+    title: "Chop a Tree",
+    category: "Incremental",
+    description: "Addictive incremental loop game on top of clean modular system, database system, and organic procedural tree generation."
+  },
+  {
+    youtubeId: "rwDXuu_LWpfyT6L5",
+    title: "Laser",
+    category: "Weapons",
+    description: "A prototype of laser system that can potentially be utilized for pvp, drawing, etc."
+  },
+  {
+    youtubeId: "OeKSdvqUwxRg8WIm",
+    title: "Guided Missile",
+    category: "Physics",
+    description: "Physics-driven and controllable missile."
+  }
+];
+
+// ---- render past works grid ----
+const grid = document.getElementById("works-grid");
+WORKS.forEach((w) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="card-video" data-id="${w.youtubeId}">
+      <img src="https://img.youtube.com/vi/${w.youtubeId}/hqdefault.jpg" alt="${w.title} thumbnail" loading="lazy">
+      <div class="play-btn"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+    </div>
+    <div class="card-body">
+      <span class="card-tag">${w.category}</span>
+      <h3 class="card-title">${w.title}</h3>
+      <p class="card-desc">${w.description}</p>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+
+// load the YouTube embed only when a thumbnail is clicked (keeps the page light)
+grid.addEventListener("click", (e) => {
+  const box = e.target.closest(".card-video");
+  if (!box || box.querySelector("iframe")) return;
+  const id = box.dataset.id;
+  box.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" title="video" allow="accelerated-video; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+});
+
+// ---- discord handle + copy button ----
+document.getElementById("discord-handle").textContent = DISCORD_HANDLE;
+const copyBtn = document.getElementById("copy-btn");
+copyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(DISCORD_HANDLE);
+    copyBtn.textContent = "copied";
+    setTimeout(() => (copyBtn.textContent = "copy"), 1500);
+  } catch {
+    copyBtn.textContent = "select & copy";
+  }
+});
+
+// ---- active tab highlight on scroll ----
+const tabs = document.querySelectorAll("[data-tab]");
+const sections = ["profile", "past-works", "hire-me"].map((id) => document.getElementById(id));
+const setActive = () => {
+  let current = sections[0].id;
+  const y = window.scrollY + 100;
+  sections.forEach((s) => { if (y >= s.offsetTop) current = s.id; });
+  tabs.forEach((t) => t.classList.toggle("active", t.getAttribute("href") === "#" + current));
+};
+window.addEventListener("scroll", setActive, { passive: true });
+setActive();
+</script>
+</body>
+</html>
